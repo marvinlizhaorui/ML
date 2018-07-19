@@ -203,7 +203,7 @@ print(sess.run(y, feed_dict={x: [[0.7, 0.9]]}))
 ```
 
 一次性计算多个样例的前向传播结果
-```
+```python
 x  = tf.placeholder(tf.float32([2, 3], shape=(3, 2), name='input'))
 print(sess.run(y, feed_dict={x: [[0.7, 0.9], [0.1, 0.4], [0.5, 0.8]]}))
 ```
@@ -212,3 +212,148 @@ print(sess.run(y, feed_dict={x: [[0.7, 0.9], [0.1, 0.4], [0.5, 0.8]]}))
 需要定义一个损失函数来刻画当前的预测值和真是答案之间的差距.
 然后通过反向传播算法来调整神经网络参数的取值
 使得差距可以被缩小.
+
+一个简单的损失函数,并通过TensorFlow定义了反向传播的算法
+
+```python
+# 定义损失函数来刻画预测值和真实值的差距
+cross_entropy = - tf.reduce_mean(
+    y_ * tf.log(tf.clip_by_value(y, 1e-10, 1.0))
+)
+# 定义学习率
+learning_rate = 0.001
+# 定义反向传播算法来优化神经网络中的参数
+train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)
+```
+
+> 目前TensorFlow支持7种不同的反向传播优化器.常用的优化方法有三种
+tf.train.GradientDescentOptimizer
+tf.train.AdamOptimizer
+tf.train.MomentumOptimizer
+
+#### 完整神经网络样例程序
+
+```python
+import tensorflow as tf
+
+# NumPy是一个科学计算的工具包,这里通过Numpy工具包生成模拟数据集
+from numpy.random import RandomState
+
+# 定义训练数据Batch的大小
+batch_size = 8
+
+# 定义神经网络的参数
+w1 = tf.Variable(tf.random_normal([2, 3], stddev=1, seed=1))
+w2 = tf.Variable(tf.random_normal([3, 1], stddev=1, seed=1))
+
+# 在shape的一个维度上使用None可以方便使用不大的Batch大小.
+# 在训练时需要把数据分成比较小的Batch,但在测试时,可以一次使用全部数据.
+
+x = tf.placeholder(tf.placeholder(tf.float32, shape=(None, 2), name='x-input'))
+y_ = tf.placeholder(tf.placeholder(tf.float32, shape=(None, 1), name='y-input'))
+
+# 定义神经网络前向传播的过程
+a = tf.matmul(x, w1)
+y = tf.matmul(a, w2)
+
+# 定义损失函数和反向传播的算法
+cross_entropy = - tf.reduce_mean(
+    y_ * tf.log(tf.clip_by_value(y, 1e-10, 1.0))
+)
+# 定义学习率
+learning_rate = 0.001
+# 定义反向传播算法来优化神经网络中的参数
+train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)
+
+# 通过随机数生成一个模拟数据集
+rdm = RandomState(1)
+dataset_size = 128
+X = rdm.rand(dataset_size, 2)
+
+# 正样本
+Y = [[int(x1 + x2 < 1)] for (x1, x2) in X]
+
+# 创建一个会话来运行TensorFlow程序
+with tf.Session() as sess:
+    init_op = tf.initialize_all_variables()
+    # 初始化变量
+    sess.run(init_op)
+    print(sess.run(w1))
+    print(sess.run(w2))
+    
+    # 设定训练的轮数
+    Steps = 5000
+    for i in range(Steps):
+        # 每次选取batch_size个样本进行训练.
+        start = (i * batch_size) % dataset_size
+        end = min(start + batch_size, dataset_size)
+        
+        # 通过选取的样本训练神经网络并更新参数
+        sess.run(train_step, feed_dict={x: X[start: end], y_: Y[start: end]})
+        if i % 1000 == 0:
+            # 每隔一段时间计算在所有数据上的交叉熵并输出
+            total_cross_entropy = sess.run(
+                cross_entropy, feed_dict={x: X, y_: Y}
+            )
+            print('After %d training step(s), cross entropy on all data is %g' % (i, total_cross_entropy))
+    print(sess.run(w1))  
+    print(sess.run(w2))
+    
+```
+
+## 第四章 深层神经网络
+
+### 深度学习与深度神经网络
+
+深度学习
+> **定义**: 一类通过多层非线性变换对高复杂性数据建模算法的合集
+
+因为深层神经网络是实现"多层非线性变换"最常用的一种方法.
+所以基本上可以认为深度学习就是深度神经网络的代名词.
+特性  多层和非线性
+
+#### 线性模型的局限性
+
+当线性模型的输入只有一个时,x和y形成了二维坐标系上的一条直线.
+
+当线性模型的输入有n个时,x和y形成了n+1维空间中的一个平面.
+
+而一个线性模型中通过输入得到输出的函数被称为一个线性变换.
+
+线性模型的最大特点是任意线性模型的组合仍然是线性模型.
+
+只通过线性变换,任意层的全连接神经网络和单层的神经网络模型的表达能力没有任何区别.
+
+#### 激活函数实现去线性化
+
+如果将每一个神经元(神经网络中的节点)的输出通过一个非线性函数,那么整个神经网络的模型也就不再是线性的了.
+
+加上激活函数和偏置项后的前向传播算法与之前的变化:
+
+- 增加了偏置项(bias)
+- 每个节点的取值不再是单纯的加权和(在加权和的基础上还做了一个非线性变换)
+
+![](http://ww1.sinaimg.cn/large/8d8126e8gy1ftfbtgxd8bj20rv0btadp.jpg)
+
+TensorFlow支持7种非线性激活函数,也支持使用自己定义的激活函数
+
+```python
+a = tf.nn.relu(tf.matmul(x, w1) + biases1)
+y = tf.nn.relu(tf.matmul(a, w2) + biases2)
+```
+
+#### 多层网络解决异或运算
+
+深度神经网络实际上有组合特征提取的功能.
+
+这个特征对于解决不易提取特征向量的问题(图片识别,语音识别等)有很大帮助.
+
+### 损失函数定义
+
+#### 经典损失函数
+
+##### 分类问题
+
+判断一个输出向量我和期望向量接近程度用**交叉熵**.
+交叉熵刻画了两个概率分布之间的距离,它是分类问题中使用比较广的损失函数.
+
