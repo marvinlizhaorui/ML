@@ -2,8 +2,8 @@
 ## 李兆瑞
 
 ![](https://img.shields.io/badge/%E6%80%A7%E5%88%AB-%E7%94%B7-brightgreen.svg) ![](https://img.shields.io/badge/%E5%B9%B4%E9%BE%84-25-yellowgreen.svg) ![](https://img.shields.io/badge/%E5%B7%A5%E4%BD%9C%E5%B9%B4%E9%99%90-3%E5%B9%B4-orange.svg) 
-
-- 求职意向：NLP工程师、机器学习工程师 ![|right](http://ww1.sinaimg.cn/large/8d8126e8gy1ftl87f2sbcj203n047js0.jpg)
+![|right](http://ww1.sinaimg.cn/large/8d8126e8gy1ftl87f2sbcj203n047js0.jpg)
+- 求职意向：NLP工程师、机器学习工程师 
 - 学历：本科/南京工程学院
 - 手机：17681825594
 - Email：[marvin.li1220@gmail.com](marvin.li1220@gmail.com)
